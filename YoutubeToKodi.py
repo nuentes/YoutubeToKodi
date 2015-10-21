@@ -28,6 +28,7 @@ def fileNameCreator(name):
     name = name.replace('*','')
     name = name.replace('?','')
     name = name.replace('|','')
+    name = name.replace('  ',' ')
     return name
 
 def updateListFile():
