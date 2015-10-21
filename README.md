@@ -3,7 +3,7 @@ This python script will download metadata and images for Youtube channels so you
 
 How to use it:
 
-1) Place the python script anywhere
+1) Place the python script anywhere on your server or PC (it is NOT a Kodi add-on... yet)
 
 2) add a list.txt file to the same path
 
