@@ -1,9 +1,9 @@
 #********************USER CONFIG********************#
 #enter your API key, refresh interval, and the
 #directory where you'd like to put the files
-key = "AIzaSyB1sD79USBsvw3DrNsmH5vkSpjZXWGDpa4"
+key = ""
 minutes = 60
-DestDir = "/media/andre/2TB/Completed/Youtube/"
+DestDir = "/media/user/Youtube/"
 #******************END USER CONFIG******************#
 
 import requests
