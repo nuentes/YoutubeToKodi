@@ -1,17 +1,29 @@
 #********************USER CONFIG********************#
 #enter your API key, refresh interval, and the
 #directory where you'd like to put the files
-key = ""
+key = "AIzaSyB1sD79USBsvw3DrNsmH5vkSpjZXWGDpa4"
 minutes = 60
-DestDir = "/media/user/Youtube/"
+DestDir = "D:\Completed\TV Shows"
 #******************END USER CONFIG******************#
 
+#***********to do
+#Playlist import
+#If playlist, get 200, not 50
+#Modes – tv/movies/music video
+
+#Github:
+#Dependencies
+#Wiki
+#Known issues:
+    #Limit of 50 most recent uploads from user
+#***************
+
+import os
+import sys
+import time
 import requests
 import json
 import urllib
-import time
-import os
-import sys
 import shutil
 import re
 
@@ -19,21 +31,23 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 def fileNameCreator(name):
-    name = name.replace('"','')
-    name = name.replace('<','')
-    name = name.replace('>','')
-    name = name.replace('\\','')
-    name = name.replace('/','')
-    name = name.replace(':','')
-    name = name.replace('*','')
-    name = name.replace('?','')
-    name = name.replace('|','')
+    regex = re.compile('[%s]' % '"< >\\/:*\?|')
+    name = regex.sub('', name)
+    #name = name.replace('"','')
+    #name = name.replace('<','')
+    #name = name.replace('>','')
+    #name = name.replace('\\','')
+    #name = name.replace('/','')
+    #name = name.replace(':','')
+    #name = name.replace('*','')
+    #name = name.replace('?','')
+    #name = name.replace('|','')
     name = name.replace('  ',' ')
     return name
 
 def updateListFile():
     #write the array to list.txt
-    listFile = open(full_path + "/list.txt","wb")
+    listFile = open(full_path + separator + "list.txt","wb")
     listFile.truncate()
     i=0
     while i < myLen:
@@ -57,13 +71,23 @@ def sanitizer(txt):
     txt2 = txt2.replace("  "," ")
     return txt2
 
+#make compatible with linux and windows
+if DestDir.find('/'):
+    separator = "/"
+    if not DestDir[1:] == "/":
+        DestDir = DestDir + "/"
+else:
+    separator = "\\"
+    if not DestDir[1:] == "\\":
+        DestDir = DestDir + "\\"
+
 #find and/or create file with usernames and latest upload
 full_path = os.path.dirname(os.path.realpath(__file__))
-if not os.path.isfile(full_path + "/" + "list.txt"):
+if not os.path.isfile(full_path + separator + "list.txt"):
     print "There is no list.txt file.  You must create this file and place it in the same directory as this script. Then just add each channel or UserID as separate lines in the file"
 else:
     while minutes == minutes:
-        arr = open(full_path + "/list.txt","r").read().split()
+        arr = open(full_path + separator + "list.txt","r").read().split()
         #determine if we have searched for each of these shows before - if we haven't make it look like we have
         myLen = len(arr) * 2
         i=0
@@ -105,13 +129,13 @@ else:
             items = text['items'][0]
             uploadPlaylist = items['contentDetails']['relatedPlaylists']['uploads']
             #add the data for the channel if it doesn't already exist
-            channelName = items['snippet']['title']
+            channelName = fileNameCreator(items['snippet']['title'].encode('utf-8').strip())
             if not os.path.exists(DestDir + channelName):
                 os.makedirs(DestDir + channelName)
-            if not os.path.isfile(DestDir + channelName + "/tvshow.nfo"):
-                myFile = os.path.join(DestDir + channelName, "/tvshow.nfo")
+            if not os.path.isfile(DestDir + channelName + separator + "tvshow.nfo"):
+                myFile = os.path.join(DestDir + channelName, separator + "tvshow.nfo")
                 plot = sanitizer(items['snippet']['description'].encode('utf-8').strip())
-                with open(DestDir + channelName + "/tvshow.nfo", 'a') as file:
+                with open(DestDir + channelName + separator + "tvshow.nfo", 'a') as file:
                     file.write('<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\r\n')
                     file.write('<tvshow>\r\n')
                     file.write('	<title>' + channelName + '</title>\r\n')
@@ -121,7 +145,7 @@ else:
                     file.close()
                 urllib.urlretrieve(items['brandingSettings']['image']['bannerTvImageUrl'], os.path.join(DestDir + channelName, "fanart.jpg"))
                 urllib.urlretrieve(items['snippet']['thumbnails']['high']['url'], os.path.join(DestDir + channelName, "folder.jpg"))
-                shutil.copy2(DestDir + channelName + "/folder.jpg", DestDir + channelName + "/poster.jpg")
+                shutil.copy2(DestDir + channelName + "/folder.jpg", DestDir + channelName + separator + "poster.jpg")
 					
             #Get the data of the videos and add to a file.
             r = requests.get("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId="+uploadPlaylist+"&key="+key+"&maxResults=50")
@@ -147,7 +171,7 @@ else:
                         thisVideoData = text['items'][0]
                         myDate = thisVideoData['snippet']['publishedAt'][:10]
                         myYear = myDate[:4]
-                        path = DestDir + channelName + "/" + myYear + "/"
+                        path = DestDir + channelName + separator + myYear + separator
                         title = fileNameCreator(thisVideoData['snippet']['title'].encode('utf-8').strip())
                         DateAndTitle = myDate + " " + title
                         if not os.path.exists(path):
@@ -178,7 +202,7 @@ else:
                             file.write('<episodedetails>\r\n')
                             file.write('	<title>' + title + '</title>\r\n')
                             file.write('	<season>' + myYear + '</season>\r\n')
-                            file.write('	<episode>' + myDate[5:] + '</episode>\r\n')
+                            file.write('	<episode>' + myDate[5:].replace("-","") + '</episode>\r\n')
                             file.write('	<plot>' + description + '</plot>\r\n')
                             file.write('	<aired>' + myDate + '</aired>\r\n')
                             file.write('	<runtime>' + duration + '</runtime>\r\n')
