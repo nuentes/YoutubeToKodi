@@ -1,22 +1,16 @@
 #********************USER CONFIG********************#
 #enter your API key, refresh interval, and the
 #directory where you'd like to put the files
-key = "AIzaSyB1sD79USBsvw3DrNsmH5vkSpjZXWGDpa4"
+key = ""
 minutes = 60
 DestDir = "D:\Completed\TV Shows"
+myChannelID = ''
+#filling in myChannelID will automatically import all of your
+#subscriptions into neat and tidy folders.
+#you can get your channel ID by going to Youtube in a browser
+#click "My Channel", and then copy the web address (everything
+#after "/channel/")
 #******************END USER CONFIG******************#
-
-#***********to do
-#Playlist import
-#Modes – tv/movies/music video
-
-#userID's are 24 characters long
-#Github:
-#Dependencies
-#Wiki
-#Known issues:
-    #Limit of 50 most recent uploads from user
-#***************
 
 import os
 import sys
@@ -88,6 +82,15 @@ if not os.path.isfile(full_path + separator + "list.txt"):
 else:
     while minutes == minutes:
         arr = open(full_path + separator + "list.txt","r").read().split()
+        if myChannelID <> "":
+            #automatically update your subscriptions and add to the array
+            r = requests.get("https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&id=" + myChannelID + "&key=" + key + "
+            text = json.loads(r.text)
+            items = text['items']
+            for i in range(0,len(items)):
+                if not items[i]['snippet']['channelId'] in arr:
+                    arr.append(items[i]['snippet']['channelId'])
+                
         #determine if we have searched for each of these shows before - if we haven't make it look like we have
         myLen = len(arr) * 2
         i=0
