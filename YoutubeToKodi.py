@@ -1,12 +1,14 @@
+#!/usr/bin/python
 #********************USER CONFIG********************#
 #enter your API key, refresh interval, and the
 #directory where you'd like to put the files
-key = ""
+key = "AIzaSyB1sD79USBsvw3DrNsmH5vkSpjZXWGDpa4"
 minutes = 60
-DestDir = "D:\Completed\TV Shows"
-myChannelID = ''
+DestDir = "/media/andre/2TB/Completed/Youtube"
+myChannelID = 'GoHAddOn'
+#this accepts either your youtube username or ChannelID
 #filling in myChannelID will automatically import all of your
-#subscriptions into neat and tidy folders.
+#subscriptions into neat and tidy folders (max of 50 subscriptions)
 #you can get your channel ID by going to Youtube in a browser
 #click "My Channel", and then copy the web address (everything
 #after "/channel/")
@@ -25,17 +27,8 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 def fileNameCreator(name):
-    regex = re.compile('[%s]' % '"< >\\/:*\?|')
-    name = regex.sub('', name)
-    #name = name.replace('"','')
-    #name = name.replace('<','')
-    #name = name.replace('>','')
-    #name = name.replace('\\','')
-    #name = name.replace('/','')
-    #name = name.replace(':','')
-    #name = name.replace('*','')
-    #name = name.replace('?','')
-    #name = name.replace('|','')
+    name.encode('utf-8').strip()
+    name = re.sub(r'[^%s]' % "-_\.\(\) abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", '', name)
     name = name.replace('  ',' ')
     return name
 
@@ -65,8 +58,20 @@ def sanitizer(txt):
     txt2 = txt2.replace("  "," ")
     return txt2
 
+def getChannelId(id):
+    #take a username and convert it to the channelId
+    try:
+        #this should work if the input is a valid username
+        r = requests.get("https://www.googleapis.com/youtube/v3/channels?key="+key+"&forUsername="+id+"&part=id")
+        text = json.loads(r.text)
+        channelId = text['items'][0]['id']
+    except:
+        #if it didn't work, we'll assume it was a channelId
+        channelId = id
+    return channelId
+
 #make compatible with linux and windows
-if DestDir.find('/'):
+if DestDir.find('\/'):
     separator = "/"
     if not DestDir[1:] == "/":
         DestDir = DestDir + "/"
@@ -84,12 +89,13 @@ else:
         arr = open(full_path + separator + "list.txt","r").read().split()
         if myChannelID <> "":
             #automatically update your subscriptions and add to the array
-            r = requests.get("https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&id=" + myChannelID + "&key=" + key + "
+            channelId = getChannelId(myChannelID)
+            r = requests.get("https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&channelId=" + channelId + "&key=" + key + "&maxResults=50")
             text = json.loads(r.text)
             items = text['items']
             for i in range(0,len(items)):
-                if not items[i]['snippet']['channelId'] in arr:
-                    arr.append(items[i]['snippet']['channelId'])
+                if not items[i]['snippet']['resourceId']['channelId'] in arr:
+                    arr.append(items[i]['snippet']['resourceId']['channelId'])
                 
         #determine if we have searched for each of these shows before - if we haven't make it look like we have
         myLen = len(arr) * 2
@@ -115,23 +121,21 @@ else:
         while i < len(arr):
             #determine if this is a playlist
             if arr[i][:1] == "+":
-                playlistID = arr[i][-1:]
-                r = requests.get("https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=" + playlistID + "&key=" + key + "&maxResults=50")
+                playlistID = arr[i][1:]
+                r = requests.get("https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=" + playlistID + "&key=" + key + "&maxResults=1")
                 text = json.loads(r.text)
-                items = text['items']
+                print playlistID
+                print text
+                items = text['items'][0]
                 channelName = items['snippet']['channelTitle'] + ' - ' + items['snippet']['title']
-                channelName = fileNameCreator(channelName.encode('utf-8').strip())
+                channelName = fileNameCreator(channelName)
                 plot = sanitizer(items['snippet']['description'].encode('utf-8').strip())
+                r = requests.get("https://www.googleapis.com/youtube/v3/channels?id=" + items['snippet']['channelId'] + "&key=" + key + "&part=snippet,contentDetails,brandingSettings")
+                text = json.loads(r.text)
+                items = text['items'][0]
             else:
-                try:
-                    #this should work if the input is a username
-                    r = requests.get("https://www.googleapis.com/youtube/v3/channels?key="+key+"&forUsername="+arr[i]+"&part=id")
-                    text = json.loads(r.text)
-                    channelId = text['items'][0]['id']
-                except:
-                    #if it didn't work, we'll assume it was a channelId
-                    channelId = arr[i]
-                #Get the recent uploads by user playlist
+                channelId = getChannelId(arr[i])
+                #Get the 'recent uploads by user' playlist
                 try:
                     r = requests.get("https://www.googleapis.com/youtube/v3/channels?id=" + channelId + "&key=" + key + "&part=snippet,contentDetails,brandingSettings")
                 except:
@@ -140,7 +144,7 @@ else:
                 text = json.loads(r.text)
                 items = text['items'][0]
                 playlistID = items['contentDetails']['relatedPlaylists']['uploads']
-                channelName = fileNameCreator(items['snippet']['title'].encode('utf-8').strip())
+                channelName = fileNameCreator(items['snippet']['title'])
                 plot = sanitizer(items['snippet']['description'].encode('utf-8').strip())
             #add the data for the channel if it doesn't already exist
             if not os.path.exists(DestDir + channelName):
@@ -160,10 +164,9 @@ else:
                 shutil.copy2(DestDir + channelName + "/folder.jpg", DestDir + channelName + separator + "poster.jpg")
 
             #Get the data of the videos and add to a file.
-            if not arr[i][:1] == "+":
-                r = requests.get("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + playlistID + "&key=" + key + "&maxResults=50")
-                text = json.loads(r.text)
-                items = text['items']
+            r = requests.get("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + playlistID + "&key=" + key + "&maxResults=50")
+            text = json.loads(r.text)
+            items = text['items']
             lastSavedID = arr[i+1]
             endLoop = False
             if items[0]['snippet']['resourceId']['videoId'] == lastSavedID or endLoop:
@@ -185,7 +188,8 @@ else:
                         myDate = thisVideoData['snippet']['publishedAt'][:10]
                         myYear = myDate[:4]
                         path = DestDir + channelName + separator + myYear + separator
-                        title = fileNameCreator(thisVideoData['snippet']['title'].encode('utf-8').strip())
+                        title = fileNameCreator(thisVideoData['snippet']['title'])
+                        title = title.title()
                         DateAndTitle = myDate + " " + title
                         if not os.path.exists(path):
                             os.makedirs(path)
