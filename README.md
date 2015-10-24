@@ -1,5 +1,7 @@
 View the wiki for a bit more info
 
+The setup.py is there because I think it's supposed to be, but I have no idea if it works, or how to even test it
+
 new in version 0.2:
 
 Windows compatibility was added (yay!)
