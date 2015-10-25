@@ -4,7 +4,7 @@
 #directory where you'd like to put the files
 key = ""
 minutes = 60
-DestDir = "/media/andre/2TB/Completed/Youtube"
+DestDir = "/media/user/Youtube"
 myChannelID = ''
 #this accepts either your youtube username or ChannelID
 #filling in myChannelID will automatically import all of your
