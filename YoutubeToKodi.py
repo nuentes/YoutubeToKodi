@@ -2,10 +2,10 @@
 #********************USER CONFIG********************#
 #enter your API key, refresh interval, and the
 #directory where you'd like to put the files
-key = "AIzaSyB1sD79USBsvw3DrNsmH5vkSpjZXWGDpa4"
+key = ""
 minutes = 60
 DestDir = "/media/andre/2TB/Completed/Youtube"
-myChannelID = 'GoHAddOn'
+myChannelID = ''
 #this accepts either your youtube username or ChannelID
 #filling in myChannelID will automatically import all of your
 #subscriptions into neat and tidy folders (max of 50 subscriptions)
