@@ -228,6 +228,6 @@ else:
                             file.close()
                         myFile.close()
                         #And download the episode thubnail
-                        urllib.urlretrieve(thisVideoData['snippet']['thumbnails']['high']['url'], os.path.join(path, DateAndTitle +".jpg"))
+                        urllib.urlretrieve(thisVideoData['snippet']['thumbnails']['high']['url'], os.path.join(path, DateAndTitle +"-thumb.jpg"))
             i = i+2
         time.sleep(minutes*60)
